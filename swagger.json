@@ -1,0 +1,548 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Multi Client Manager API",
+    "version": "1.0.0",
+    "description": "REST API for managing clients, tasks, and authentication in the Multi Client Manager system."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token obtained from login or signup. Expires in 10 minutes."
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string" }
+        }
+      },
+      "AuthResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/SuccessResponse" },
+          {
+            "type": "object",
+            "properties": {
+              "accessToken": {
+                "type": "string",
+                "description": "JWT access token. Valid for 10 minutes.",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              }
+            }
+          }
+        ]
+      },
+      "SignupRequest": {
+        "type": "object",
+        "required": ["username", "email", "password"],
+        "properties": {
+          "username": { "type": "string", "example": "johndoe" },
+          "email": { "type": "string", "format": "email", "example": "john@example.com" },
+          "password": { "type": "string", "format": "password", "example": "securepassword123" },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "client"],
+            "example": "client"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "MongoDB ObjectId of the admin who created this user.",
+            "example": "64f1a2b3c4d5e6f7a8b9c0d1"
+          },
+          "companyName": {
+            "type": "string",
+            "description": "Required only when role is 'client'.",
+            "example": "Acme Corp"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password", "role"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "john@example.com" },
+          "password": { "type": "string", "format": "password", "example": "securepassword123" },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "client"],
+            "example": "client"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d1" },
+          "name": { "type": "string", "example": "Design Landing Page" },
+          "type": { "type": "string", "example": "design" },
+          "description": { "type": "string", "example": "Create a responsive landing page." },
+          "deadline": { "type": "string", "format": "date-time", "example": "2025-12-31T23:59:59Z" },
+          "status": { "type": "string", "example": "pending" },
+          "clientId": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d2" },
+          "createdBy": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d3" },
+          "targetViews": { "type": "number", "example": 10000 },
+          "delay_reason": { "type": "string", "example": "Waiting for assets from client." }
+        }
+      },
+      "CreateTaskRequest": {
+        "type": "object",
+        "required": ["name", "type", "description", "deadline"],
+        "properties": {
+          "name": { "type": "string", "example": "Design Landing Page" },
+          "type": { "type": "string", "example": "design" },
+          "description": { "type": "string", "example": "Create a responsive landing page." },
+          "deadline": { "type": "string", "format": "date-time", "example": "2025-12-31T23:59:59Z" },
+          "clientId": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d2" },
+          "targetViews": { "type": "number", "example": 10000 }
+        }
+      },
+      "UpdateTaskRequest": {
+        "type": "object",
+        "required": ["name", "type", "description", "deadline"],
+        "properties": {
+          "name": { "type": "string", "example": "Design Landing Page v2" },
+          "type": { "type": "string", "example": "design" },
+          "description": { "type": "string", "example": "Updated responsive landing page." },
+          "deadline": { "type": "string", "format": "date-time", "example": "2025-12-31T23:59:59Z" },
+          "status": { "type": "string", "example": "in-progress" },
+          "delay_reason": { "type": "string", "example": "Awaiting client feedback." }
+        }
+      },
+      "RequestItem": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d5" },
+          "name": { "type": "string", "example": "Logo Design" },
+          "description": { "type": "string", "example": "We need 3 logo variants." },
+          "quantity": { "type": "number", "example": 3 },
+          "type": { "type": "string", "example": "design" },
+          "deadline": { "type": "string", "format": "date-time", "example": "2025-11-30T23:59:59Z" },
+          "requestedBy": { "type": "string", "description": "MongoDB ObjectId of the client who sent the request.", "example": "64f1a2b3c4d5e6f7a8b9c0d2" },
+          "reviewedBy": { "type": "string", "description": "MongoDB ObjectId of the admin reviewing the request.", "example": "64f1a2b3c4d5e6f7a8b9c0d3" },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "example": "pending" }
+        }
+      },
+      "SendRequestBody": {
+        "type": "object",
+        "required": ["name", "description", "quantity", "type", "deadline"],
+        "properties": {
+          "name": { "type": "string", "example": "Logo Design" },
+          "description": { "type": "string", "example": "We need 3 logo variants." },
+          "quantity": { "type": "number", "example": 3 },
+          "type": { "type": "string", "example": "design" },
+          "deadline": { "type": "string", "format": "date-time", "example": "2025-11-30T23:59:59Z" }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing or invalid access token.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "message": "Unauthorized access.." }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Validation error or missing required fields.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/multiClientManager/auth/signup": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new user",
+        "description": "Creates a new user account. If the role is 'client', a ClientProfile is also created atomically. Returns a JWT access token and sets a refresh token as an httpOnly cookie (`authCookie`).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SignupRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Sets `authCookie` with JWT refresh token (httpOnly, secure). Valid for 1 day.",
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" },
+                "example": {
+                  "success": true,
+                  "message": "User created successfully..",
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/multiClientManager/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login a user",
+        "description": "Authenticates a user by email, password, and role. Returns a JWT access token and sets a refresh token as an httpOnly cookie (`authCookie`).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Sets `authCookie` with JWT refresh token (httpOnly, secure). Valid for 1 day.",
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" },
+                "example": {
+                  "success": true,
+                  "message": "Login Successfull",
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/multiClientManager/tasks/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "description": "Uses the `authCookie` refresh token (httpOnly cookie) to issue a new access token. Requires both `authenticateAccessToken` and `authenticateRefreshToken` middleware.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "New access token issued." },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/multiClientManager/tasks/addTasks": {
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Create a new task",
+        "description": "Admin-only. Creates a new task and assigns it to a client.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTaskRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": { "success": true, "message": "Task created successfully.." }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/multiClientManager/tasks/updateTasks/{taskId}": {
+      "patch": {
+        "tags": ["Tasks"],
+        "summary": "Update an existing task",
+        "description": "Admin-only. Updates any field on an existing task by its ID.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "MongoDB ObjectId of the task to update.",
+            "example": "64f1a2b3c4d5e6f7a8b9c0d1"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateTaskRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "updatedTasks": { "$ref": "#/components/schemas/Task" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/multiClientManager/tasks/deleteTasks/{taskId}": {
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Delete a task",
+        "description": "Admin-only. Permanently deletes a task by its ID.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "MongoDB ObjectId of the task to delete.",
+            "example": "64f1a2b3c4d5e6f7a8b9c0d1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task deleted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "deletedTasks": {
+                          "type": "object",
+                          "properties": {
+                            "acknowledged": { "type": "boolean" },
+                            "deletedCount": { "type": "number" }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/multiClientManager/tasks/getTasks": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get tasks",
+        "description": "Retrieves tasks based on the logged-in user's role.\n\n- **Admin**: Fetches tasks for a specific client by passing `clientId` in the request body.\n- **Client**: Fetches all tasks assigned to the logged-in client automatically.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "description": "Required only for admin role to specify which client's tasks to retrieve.",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string",
+                    "description": "MongoDB ObjectId of the client (admin only).",
+                    "example": "64f1a2b3c4d5e6f7a8b9c0d2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "tasks": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Task" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/multiClientManager/request/viewRequests": {
+      "get": {
+        "tags": ["Requests"],
+        "summary": "View all incoming requests",
+        "description": "Admin-only. Retrieves all task requests that are directed to the logged-in admin (i.e. where `reviewedBy` matches the admin's ID).",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Requests fetched successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "requests": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/RequestItem" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/multiClientManager/request/approveRequest": {
+      "post": {
+        "tags": ["Requests"],
+        "summary": "Approve a task request",
+        "description": "Admin-only. Approves a pending request by its ID and creates the corresponding number of tasks (`quantity`) derived from the request data, each with a status of `'approved'`.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["requestId"],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "description": "MongoDB ObjectId of the request to approve.",
+                    "example": "64f1a2b3c4d5e6f7a8b9c0d5"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks created from the approved request.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": { "success": true, "message": "Tasks created successfully" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/multiClientManager/requestTasks": {
+      "post": {
+        "tags": ["Requests"],
+        "summary": "Send a task request",
+        "description": "Allows a client to submit a request for new tasks. The request is automatically routed to the admin who created the client account (`createdBy`).",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SendRequestBody" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Request sent successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": { "success": true, "message": "Request send successfully.." }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "tags": [
+    { "name": "Auth", "description": "User registration, login, and token management." },
+    { "name": "Tasks", "description": "Task creation, retrieval, update, and deletion. All routes require a valid Bearer token." },
+    { "name": "Requests", "description": "Client-initiated task requests routed to the managing admin." }
+  ]
+}
