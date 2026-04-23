@@ -19,7 +19,10 @@ const connectDB = async (url, callback) => {
 
         isConnected = db.connections[0].readyState;
         console.log("=> New database connection established");
-        callback();
+        if(callback){
+            callback();
+        }
+        
     } catch (error) {
         console.error("Connection failed..", error);
         throw error; // Rethrow so the calling function knows it failed
