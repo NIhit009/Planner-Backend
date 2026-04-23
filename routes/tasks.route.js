@@ -2,7 +2,9 @@ const taskRouter = require('express').Router()
 const taskController = require('../controllers/tasks.controller');
 const adminCheck = require('../middlewares/adminCheck.middleware');
 const {authenticateAccessToken, authenticateRefreshToken} = require('../middlewares/authentication.middleware');
+const dbMiddleware = require('../middlewares/checkMongoConnection.middleware');
 
+taskRouter.use(dbMiddleware);
 taskRouter.use(authenticateAccessToken);
 taskRouter.get("/getTasks", taskController.getTasks);
 taskRouter.use(adminCheck)

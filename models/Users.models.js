@@ -20,6 +20,9 @@ const userSchema = mongoose.Schema({
     },
     createdBy: {
         type: mongoose.Types.ObjectId,
+    },
+    avatar: {
+        type: String
     }
 }, {timestamps: true})
 

@@ -47,7 +47,7 @@ const TaskSchema = mongoose.Schema({
     },
     acheievedViews: {
         type: Number,
-    }
+    },
 }, {timestamps: true})
 
 module.exports = mongoose.model("Task", TaskSchema);
