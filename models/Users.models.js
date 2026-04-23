@@ -20,6 +20,7 @@ const userSchema = mongoose.Schema({
     },
     createdBy: {
         type: mongoose.Types.ObjectId,
+        ref: 'User'
     },
     avatar: {
         type: String

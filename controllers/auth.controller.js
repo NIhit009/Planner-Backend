@@ -13,26 +13,6 @@ exports.signup = asyncHandler(async (req, res, next) => {
     const saltRounds = 12
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const newUser = new User({ fullName: name, email, password: hashedPassword, role, createdBy });
-    const session = await mongoose.startSession();
-    session.startTransaction()
-    try {
-        await newUser.save({session});
-        if (role === 'client') {
-            if (!companyName) return res.status(400).json({message: "Please Provide the Company Name.."})
-            await ClientProfile.create([{
-                accountId: newUser._id,
-                companyName
-            }], {session})
-        }
-        await session.commitTransaction();
-    } catch (error) {
-        console.log(error);
-        await session.abortTransaction();
-        throw error;
-    }
-    finally{
-        session.endSession()
-    }
     const accessToken = jwt.sign({ fullName: name, email, role, id: newUser._id }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '10m' });
     const refreshToken = jwt.sign({ email, role, id: newUser._id }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '1d' });
     res.cookie('authCookie', refreshToken, { httpOnly: true, secure: true });
@@ -52,5 +32,14 @@ exports.login = asyncHandler(async (req, res, next) => {
     const refreshToken = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_REFRESH_TOKEN, { expiresIn: "1d" });
     res.cookie('authCookie', refreshToken, { httpOnly: true, secure: true });
     return res.status(200).json({ success: true, message: "Login Successfull", accessToken });
+})
+
+exports.logout = asyncHandler(async(req, res, next) => {
+    res.clearCookie('authCookie', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none'
+    });
+    return res.status(200).json({success: true, message: "Cookie removed successfully.."});
 })
 

@@ -42,7 +42,6 @@ app.use(errorHandler);
 // app listen middleware
 
 if (process.env.NODE_VALUE !== 'production') {
-    const PORT = 3001;
     connectDB(process.env.MONGO_URI, () => {
         app.listen(port, () => {
             console.log(`The server is running on port ${port}`);
