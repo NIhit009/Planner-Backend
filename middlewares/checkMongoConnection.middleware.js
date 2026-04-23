@@ -1,4 +1,4 @@
-const connectDB = require("../lib/connectDB");
+const connectDB = require("../utils/db");
 
 const dbMiddleware = async (req, res, next) => {
     try {
