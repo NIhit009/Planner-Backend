@@ -2,10 +2,10 @@ const asyncHandler = require('express-async-handler');
 const Issues = require('../models/Issues.models');
 
 exports.sendIssues = asyncHandler(async (req , res , next) => {
-    const {title, description} = req.body;
+    const {title, description, severity} = req.body;
     const user = req.user;
     if(!title || !description) return res.status(404).json({message: "Need non-empty Inputs.."});
-    const newIssue = new Issues({title, description, submittedBy: user.id});
+    const newIssue = new Issues({title, description, submittedBy: user.id, severity});
     newIssue.save();
     console.log(newIssue);
     return res.status(200).json({success: true, message: "Issues sent successfully.."});

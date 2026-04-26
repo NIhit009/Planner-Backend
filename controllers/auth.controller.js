@@ -13,6 +13,7 @@ exports.signup = asyncHandler(async (req, res, next) => {
     const saltRounds = 12
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const newUser = new User({ fullName: name, email, password: hashedPassword, role, createdBy });
+    await newUser.save();
     const accessToken = jwt.sign({ fullName: name, email, role, id: newUser._id }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '10m' });
     const refreshToken = jwt.sign({ email, role, id: newUser._id }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '1d' });
     res.cookie('authCookie', refreshToken, { httpOnly: true, secure: true });

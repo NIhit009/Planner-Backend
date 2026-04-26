@@ -19,6 +19,11 @@ const issueSchema = mongoose.Schema({
         enum: ['pending', 'resolved', 'in-progress'],
         default: 'pending'
     },
+    severity: {
+        type: String,
+        enum: ['Medium', 'Low', 'High'],
+        required: true
+    },
     resolvedBy: {
         type: mongoose.Types.ObjectId,
         ref: 'User'

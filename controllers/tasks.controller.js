@@ -3,7 +3,7 @@ const User = require('../models/Users.models');
 const asyncHandler = require('express-async-handler');
 exports.createTask = asyncHandler(async (req, res, next) => {
     const loggedInuser = req.user;
-    const { name, type, description, deadline, clientId, targetViews, driveLink, startTime } = req.body;
+    const { name, type, description, deadline, clientId, targetViews, driveLink, startTime, acheivedViews } = req.body;
     console.log("Hello..");
     if (!name || !type || !description || !deadline) return res.status(400).json({ message: "Invalid Input.." });
     
@@ -13,7 +13,7 @@ exports.createTask = asyncHandler(async (req, res, next) => {
 })
 
 exports.updateTasks = asyncHandler(async (req, res, next) => {
-    const { name, type, description, deadline, status, delay_reason, targetViews } = req.body;
+    const { name, type, description, deadline, status, delay_reason, targetViews, acheivedViews, driveLink, } = req.body;
     const { taskId } = req.params;
     console.log(taskId)
     if (!name || !type || !description || !deadline) return res.status(400).json({ message: "Invalid Input.." });
