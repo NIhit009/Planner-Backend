@@ -5,6 +5,7 @@ const {authenticateAccessToken, authenticateRefreshToken} = require('../middlewa
 const dbMiddleware = require('../middlewares/checkMongoConnection.middleware');
 
 taskRouter.use(dbMiddleware);
+taskRouter.get("/getFinishedTasks", taskController.getFinishedTasks);
 taskRouter.use(authenticateAccessToken);
 taskRouter.get("/getTasks", taskController.getTasks);
 taskRouter.use(adminCheck)

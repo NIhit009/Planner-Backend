@@ -13,9 +13,9 @@ exports.createTask = asyncHandler(async (req, res, next) => {
 })
 
 exports.updateTasks = asyncHandler(async (req, res, next) => {
-    const { name, type, description, deadline, status, delay_reason, targetViews, acheivedViews, driveLink, } = req.body;
+    const { name, type, description, deadline, status, delay_reason, targetViews, acheivedViews, driveLink, completedDate } = req.body;
     const { taskId } = req.params;
-    console.log(taskId)
+    console.log(completedDate);
     if (!name || !type || !description || !deadline) return res.status(400).json({ message: "Invalid Input.." });
     const updatedTasks = await Task.findByIdAndUpdate(taskId, {$set: req.body}, { new: true });
     if (!updatedTasks) return res.status(400).json({message: "Tasks not found.."})
@@ -55,4 +55,13 @@ exports.getTasks = asyncHandler(async (req, res, next) => {
     console.log(filter)
     const tasks = await Task.find(filter);
     return res.status(200).json({ success: true, message: "Task fetched successfully..", tasks });
+})
+
+exports.getFinishedTasks = asyncHandler(async (req, res, next) => {
+    const {date} = req.query;
+    const startDate = new Date()
+    const endDate = startDate.setDate(startDate.getDate() - date);
+    const tasks = await Task.find({status: 'completed', completionDate: {$gte: new Date(endDate), $lte: new Date(startDate)} });
+    if(!tasks) return res.status(404).json({message: "No Completed Tasks found.."});
+    return res.status(200).json({success: true, message: "Task fetched Successfully", tasks});
 })

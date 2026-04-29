@@ -21,7 +21,7 @@ const app = express();
 
 // app's middlewares
 app.use(cors({
-    origin: ["http://localhost:3001", "http://localhost:3000", "https://planner-frontend-xi-three.vercel.app"],
+    origin: ["http://localhost:3001", "http://localhost:3000", "https://planner-frontend-xi-three.vercel.app", "https://planner.voidnepal.com.np/"],
     credentials: true
 }));
 app.use(cookieParser());
