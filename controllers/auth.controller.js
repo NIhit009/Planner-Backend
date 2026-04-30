@@ -21,12 +21,12 @@ exports.signup = asyncHandler(async (req, res, next) => {
 })
 
 exports.login = asyncHandler(async (req, res, next) => {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
     console.log("Hello, World..");
-    if (!email || !password || !role ) return res.status(400).json({ message: "Email and Password cannot be empty.." });
+    if (!email || !password) return res.status(400).json({ message: "Email and Password cannot be empty.." });
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid Credientials.." });
-    if (user.role !== role.toLowerCase()) return res.status(400).json({ message: "Invalid Credientials.." });
+    // if (user.role !== role.toLowerCase()) return res.status(400).json({ message: "Invalid Credientials.." });
     const isAuthorized = await bcrypt.compare(password, user.password)
     if (!isAuthorized) return res.status(400).json({ message: "Invalid Credientials.." });
     const accessToken = jwt.sign({ id: user._id, fullName: user.fullName, email: user.email, role: user.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "10m" });
